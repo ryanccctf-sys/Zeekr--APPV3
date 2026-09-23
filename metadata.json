@@ -1,0 +1,8 @@
+{
+  "name": "极氪POC V2",
+  "description": "一个美观的汽车销售客流及环节管理H5页面，采用紫色调设计。",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
