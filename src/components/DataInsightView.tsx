@@ -36,7 +36,6 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
 }) => {
   // Sales Execution States
   const [salesTimeRange, setSalesTimeRange] = useState<'today' | 'week' | 'month'>('today');
-  const [trendGranularity, setTrendGranularity] = useState<'day' | 'week' | 'month'>('day');
   
   // Trend Dimension Toggles
   const [visibleDimensions, setVisibleDimensions] = useState<{
@@ -252,35 +251,56 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
     }));
   };
 
-  // Trend Data Sets
-  const trendDataDay = [
-    { label: '09-04', total: 110, audio: 98, rate: 89.1 },
-    { label: '09-05', total: 125, audio: 114, rate: 91.2 },
-    { label: '09-06', total: 140, audio: 130, rate: 92.9 },
-    { label: '09-07', total: 155, audio: 146, rate: 94.2 },
-    { label: '09-08', total: 138, audio: 126, rate: 91.3 },
-    { label: '09-09', total: 142, audio: 132, rate: 93.0 },
-    { label: '09-10', total: 148, audio: 136, rate: 91.9 }
+  // Overview metrics based on global salesTimeRange
+  const overviewMetrics = {
+    today: {
+      visitors: 148,
+      recordings: 136,
+      rate: '91.9%',
+      avgDuration: '28.5'
+    },
+    week: {
+      visitors: 910,
+      recordings: 846,
+      rate: '93.0%',
+      avgDuration: '30.2'
+    },
+    month: {
+      visitors: 3560,
+      recordings: 3310,
+      rate: '93.0%',
+      avgDuration: '29.8'
+    }
+  }[salesTimeRange];
+
+  // Trend Data Sets based on global salesTimeRange (横坐标为天)
+  const trendDataToday = [
+    { label: '09-23', total: 148, audio: 136, rate: 91.9 }
   ];
 
   const trendDataWeek = [
-    { label: '第1周', total: 720, audio: 645, rate: 89.6 },
-    { label: '第2周', total: 810, audio: 738, rate: 91.1 },
-    { label: '第3周', total: 865, audio: 802, rate: 92.7 },
-    { label: '第4周', total: 910, audio: 846, rate: 93.0 }
+    { label: '09-17', total: 122, audio: 110, rate: 90.2 },
+    { label: '09-18', total: 130, audio: 119, rate: 91.5 },
+    { label: '09-19', total: 138, audio: 127, rate: 92.0 },
+    { label: '09-20', total: 145, audio: 134, rate: 92.4 },
+    { label: '09-21', total: 136, audio: 126, rate: 92.6 },
+    { label: '09-22', total: 142, audio: 132, rate: 93.0 },
+    { label: '09-23', total: 148, audio: 136, rate: 91.9 }
   ];
 
   const trendDataMonth = [
-    { label: '5月', total: 2850, audio: 2510, rate: 88.1 },
-    { label: '6月', total: 3120, audio: 2810, rate: 90.1 },
-    { label: '7月', total: 3280, audio: 2980, rate: 90.9 },
-    { label: '8月', total: 3450, audio: 3190, rate: 92.5 },
-    { label: '9月', total: 3560, audio: 3310, rate: 93.0 }
+    { label: '09-01', total: 128, audio: 115, rate: 89.8 },
+    { label: '09-05', total: 135, audio: 124, rate: 91.8 },
+    { label: '09-09', total: 142, audio: 132, rate: 93.0 },
+    { label: '09-13', total: 146, audio: 135, rate: 92.5 },
+    { label: '09-17', total: 152, audio: 143, rate: 94.1 },
+    { label: '09-20', total: 145, audio: 134, rate: 92.4 },
+    { label: '09-23', total: 148, audio: 136, rate: 91.9 }
   ];
 
   const currentTrendData = 
-    trendGranularity === 'day' ? trendDataDay :
-    trendGranularity === 'week' ? trendDataWeek : trendDataMonth;
+    salesTimeRange === 'today' ? trendDataToday :
+    salesTimeRange === 'week' ? trendDataWeek : trendDataMonth;
 
   const getEmployeeItemScore = (empId: string, itemId: string, fallbackScore: number) => {
     if (empId === 'all') return fallbackScore;
@@ -499,7 +519,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
     const maxRate = 100;
     const minRate = 75;
 
-    const getX = (i: number) => paddingX + (i / (currentTrendData.length - 1)) * chartW;
+    const getX = (i: number) => currentTrendData.length <= 1 ? (width / 2) : paddingX + (i / (currentTrendData.length - 1)) * chartW;
     const getYTotal = (val: number) => height - paddingY - ((val - minTotal) / (maxTotal - minTotal)) * chartH;
     const getYRate = (val: number) => height - paddingY - ((val - minRate) / (maxRate - minRate)) * chartH;
 
@@ -538,8 +558,21 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
             );
           })}
 
+          {/* Single point vertical guide line */}
+          {currentTrendData.length === 1 && (
+            <line
+              x1={width / 2}
+              y1={paddingY}
+              x2={width / 2}
+              y2={height - paddingY}
+              stroke="#e2e8f0"
+              strokeDasharray="3 3"
+              strokeWidth="1.5"
+            />
+          )}
+
           {/* Area Fill for Total Visits */}
-          {visibleDimensions.totalVisits && (
+          {visibleDimensions.totalVisits && currentTrendData.length > 1 && (
             <polygon
               points={`${getX(0)},${height - paddingY} ${totalPoints} ${getX(currentTrendData.length - 1)},${height - paddingY}`}
               fill="url(#totalGradient)"
@@ -547,7 +580,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
           )}
 
           {/* Line 1: 总到访数 (Purple) */}
-          {visibleDimensions.totalVisits && (
+          {visibleDimensions.totalVisits && currentTrendData.length > 1 && (
             <polyline
               fill="none"
               stroke="#8b5cf6"
@@ -559,7 +592,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
           )}
 
           {/* Line 2: 有录音到访数 (Emerald) */}
-          {visibleDimensions.audioVisits && (
+          {visibleDimensions.audioVisits && currentTrendData.length > 1 && (
             <polyline
               fill="none"
               stroke="#10b981"
@@ -571,7 +604,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
           )}
 
           {/* Line 3: 录音覆盖率 (Amber / Cyan) */}
-          {visibleDimensions.coverageRate && (
+          {visibleDimensions.coverageRate && currentTrendData.length > 1 && (
             <polyline
               fill="none"
               stroke="#f59e0b"
@@ -594,45 +627,84 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
               <g key={i} className="cursor-pointer" onClick={() => setActiveTrendTooltipIndex(i)}>
                 {/* Click target column */}
                 <rect 
-                  x={x - 18} 
+                  x={x - 24} 
                   y={paddingY} 
-                  width={36} 
+                  width={48} 
                   height={chartH} 
                   fill="transparent" 
                 />
 
                 {/* Total dot */}
                 {visibleDimensions.totalVisits && (
-                  <circle
-                    cx={x}
-                    cy={yTotal}
-                    r={isHovered ? 5 : 3.5}
-                    fill="#ffffff"
-                    stroke="#8b5cf6"
-                    strokeWidth="2.5"
-                  />
+                  <g>
+                    <circle
+                      cx={x}
+                      cy={yTotal}
+                      r={currentTrendData.length === 1 ? 5.5 : isHovered ? 5 : 3.5}
+                      fill="#ffffff"
+                      stroke="#8b5cf6"
+                      strokeWidth="2.5"
+                    />
+                    {currentTrendData.length === 1 && (
+                      <text
+                        x={x + 10}
+                        y={yTotal + 3.5}
+                        fontSize="10"
+                        fontWeight="bold"
+                        fill="#8b5cf6"
+                      >
+                        {d.total}人
+                      </text>
+                    )}
+                  </g>
                 )}
 
                 {/* Audio dot */}
                 {visibleDimensions.audioVisits && (
-                  <circle
-                    cx={x}
-                    cy={yAudio}
-                    r={isHovered ? 5 : 3.5}
-                    fill="#ffffff"
-                    stroke="#10b981"
-                    strokeWidth="2.5"
-                  />
+                  <g>
+                    <circle
+                      cx={x}
+                      cy={yAudio}
+                      r={currentTrendData.length === 1 ? 5.5 : isHovered ? 5 : 3.5}
+                      fill="#ffffff"
+                      stroke="#10b981"
+                      strokeWidth="2.5"
+                    />
+                    {currentTrendData.length === 1 && (
+                      <text
+                        x={x + 10}
+                        y={yAudio + 3.5}
+                        fontSize="10"
+                        fontWeight="bold"
+                        fill="#10b981"
+                      >
+                        {d.audio}条
+                      </text>
+                    )}
+                  </g>
                 )}
 
                 {/* Rate dot */}
                 {visibleDimensions.coverageRate && (
-                  <circle
-                    cx={x}
-                    cy={yRate}
-                    r={isHovered ? 4.5 : 3}
-                    fill="#f59e0b"
-                  />
+                  <g>
+                    <circle
+                      cx={x}
+                      cy={yRate}
+                      r={currentTrendData.length === 1 ? 5 : isHovered ? 4.5 : 3}
+                      fill="#f59e0b"
+                    />
+                    {currentTrendData.length === 1 && (
+                      <text
+                        x={x + 10}
+                        y={yRate + 3.5}
+                        fontSize="10"
+                        fontWeight="bold"
+                        fill="#f59e0b"
+                      >
+                        {d.rate}%
+                      </text>
+                    )}
+                  </g>
                 )}
 
                 {/* X-axis label */}
@@ -640,9 +712,9 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                   x={x}
                   y={height - 6}
                   textAnchor="middle"
-                  fontSize="9"
-                  fontWeight="600"
-                  fill={isHovered ? '#1e293b' : '#94a3b8'}
+                  fontSize={currentTrendData.length === 1 ? '11' : '9'}
+                  fontWeight="bold"
+                  fill={isHovered || currentTrendData.length === 1 ? '#475569' : '#94a3b8'}
                 >
                   {d.label}
                 </text>
@@ -1236,6 +1308,32 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
         </div>
       </header>
 
+      {/* 页面全局时间筛选栏：控制整个数据洞察页面的统计维度 */}
+      <div className="sticky top-[45px] z-20 bg-white/95 backdrop-blur-md px-4 py-2.5 flex items-center justify-between border-b border-slate-200/70 shadow-2xs">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+          <Calendar size={14} className="text-purple-600" />
+          <span>时间维度</span>
+        </div>
+        <div className="flex bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/60 text-xs font-bold">
+          {(['today', 'week', 'month'] as const).map(range => (
+            <button
+              key={range}
+              onClick={() => {
+                setSalesTimeRange(range);
+                setActiveTrendTooltipIndex(null);
+              }}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                salesTimeRange === range
+                  ? 'bg-white text-purple-600 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {range === 'today' ? '今日' : range === 'week' ? '近7天' : '本月'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="p-4 space-y-4">
         <div className="space-y-4 animate-in fade-in-50 duration-200">
@@ -1246,22 +1344,9 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                   <div className="w-1.5 h-4 bg-purple-600 rounded-full"></div>
                   <h3 className="text-sm font-bold text-slate-800">数据概览</h3>
                 </div>
-                {/* Time Range Selector */}
-                <div className="flex bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/50 text-[11px] font-bold">
-                  {(['today', 'week', 'month'] as const).map(range => (
-                    <button
-                      key={range}
-                      onClick={() => setSalesTimeRange(range)}
-                      className={`px-2.5 py-1 rounded-md transition-all ${
-                        salesTimeRange === range
-                          ? 'bg-white text-purple-600 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      {range === 'today' ? '今日' : range === 'week' ? '近7天' : '本月'}
-                    </button>
-                  ))}
-                </div>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  {salesTimeRange === 'today' ? '今日数据' : salesTimeRange === 'week' ? '近7天累计' : '本月累计'}
+                </span>
               </div>
 
               {/* 4 Overview Metric Cards */}
@@ -1273,7 +1358,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                     <Users size={16} className="text-purple-600" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black font-mono text-slate-800">148</span>
+                    <span className="text-2xl font-black font-mono text-slate-800">{overviewMetrics.visitors}</span>
                     <span className="text-[10px] text-slate-400">人</span>
                   </div>
                 </div>
@@ -1285,7 +1370,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                     <Mic size={16} className="text-emerald-600" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black font-mono text-slate-800">136</span>
+                    <span className="text-2xl font-black font-mono text-slate-800">{overviewMetrics.recordings}</span>
                     <span className="text-[10px] text-slate-400">条</span>
                   </div>
                 </div>
@@ -1297,7 +1382,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                     <Target size={16} className="text-blue-600" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black font-mono text-slate-800">91.9%</span>
+                    <span className="text-2xl font-black font-mono text-slate-800">{overviewMetrics.rate}</span>
                   </div>
                 </div>
 
@@ -1308,7 +1393,7 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                     <Clock size={16} className="text-amber-600" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black font-mono text-slate-800">28.5</span>
+                    <span className="text-2xl font-black font-mono text-slate-800">{overviewMetrics.avgDuration}</span>
                     <span className="text-[10px] text-slate-400">分钟</span>
                   </div>
                 </div>
@@ -1322,26 +1407,9 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
                   <div className="w-1.5 h-4 bg-purple-600 rounded-full"></div>
                   <h3 className="text-sm font-bold text-slate-800">录音率趋势</h3>
                 </div>
-
-                {/* Day / Week / Month Granularity */}
-                <div className="flex bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/50 text-[11px] font-bold">
-                  {(['day', 'week', 'month'] as const).map(gran => (
-                    <button
-                      key={gran}
-                      onClick={() => {
-                        setTrendGranularity(gran);
-                        setActiveTrendTooltipIndex(null);
-                      }}
-                      className={`px-2 py-0.8 rounded-md transition-all ${
-                        trendGranularity === gran
-                          ? 'bg-white text-purple-600 shadow-xs'
-                          : 'text-slate-400 hover:text-slate-700'
-                      }`}
-                    >
-                      {gran === 'day' ? '按天' : gran === 'week' ? '按周' : '按月'}
-                    </button>
-                  ))}
-                </div>
+                <span className="text-xs text-slate-400 font-medium">
+                  {salesTimeRange === 'today' ? '今日走势' : salesTimeRange === 'week' ? '近7天每日走势' : '本月每日走势'}
+                </span>
               </div>
 
               {/* 3 Dimensions Legend & Interactive Filters */}
@@ -1379,9 +1447,6 @@ export const DataInsightView: React.FC<DataInsightViewProps> = ({
 
               {/* SVG Trend Line Chart */}
               {renderTrendChart()}
-              <div className="mt-1 text-center text-[10px] text-slate-400 font-mono">
-                点击数据节点可查看详细数值
-              </div>
             </section>
 
             {/* 3. 执行率分析 (柱状图图表) */}

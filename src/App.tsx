@@ -966,7 +966,7 @@ export default function App() {
     type: 'auto' | 'manual';
     businessType?: 'car' | 'suzhou_runyi';
     carSelections?: { model: string, scene: string }[];
-    customerType?: '首次进店' | '再次进店';
+    customerType?: '首次进店' | '二次进店';
     dealStatus?: '是' | '否';
     customerName?: string;
     processName?: string;
@@ -1003,7 +1003,7 @@ export default function App() {
           { model: 'CT4', scene: '试驾' },
           { model: 'XT6', scene: '展厅' }
         ],
-        customerType: '再次进店'
+        customerType: '二次进店'
       },
       {
         id: 'mock-3',
@@ -1029,7 +1029,7 @@ export default function App() {
         carSelections: [
           { model: '全新CT6', scene: '试驾' }
         ],
-        customerType: '再次进店'
+        customerType: '二次进店'
       },
       {
         id: 'mock-5',
@@ -1126,7 +1126,7 @@ export default function App() {
     startTime: string,
     endTime: string,
     carSelections: { model: string, scene: string }[],
-    customerType: '首次进店' | '再次进店',
+    customerType: '首次进店' | '二次进店',
     dealStatus: '是' | '否',
     customerName: string
   }>({
@@ -1145,6 +1145,7 @@ export default function App() {
     duration: string,
     date: string,
     carSelections: { model: string, scene: string }[],
+    customerType: '首次进店' | '二次进店',
     dealStatus: '是' | '否',
     customerName: string
   } | null>(null);
@@ -2797,6 +2798,7 @@ export default function App() {
                           duration: totalSeconds.toString(),
                           date: activeReception.date,
                           carSelections: [],
+                          customerType: '首次进店',
                           dealStatus: '是',
                           customerName: ''
                         });
@@ -2880,31 +2882,34 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
 
-              {receptionBrand !== 'suzhou_runyi' && (
-                <div className="relative group">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 block ml-1">客户类型</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {(['首次进店', '再次进店'] as const).map((type) => {
-                      const isSelected = manualReceptionData.customerType === type;
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => setManualReceptionData({ ...manualReceptionData, customerType: type })}
-                          className={`py-3.5 px-4 rounded-2xl text-xs font-black border-2 transition-all flex items-center justify-center ${
-                            isSelected
-                              ? 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-100'
-                              : 'bg-white text-slate-500 border-slate-200 active:bg-slate-50'
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+          {/* 客户类型模块 */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-purple-600 font-semibold">
+              <UserCheck size={18} />
+              <span>客户类型</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(['首次进店', '二次进店'] as const).map((type) => {
+                const isSelected = manualReceptionData.customerType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setManualReceptionData({ ...manualReceptionData, customerType: type })}
+                    className={`py-3.5 px-4 rounded-2xl text-xs font-black border-2 transition-all flex items-center justify-center gap-2 ${
+                      isSelected
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-100'
+                        : 'bg-white text-slate-500 border-slate-200 active:bg-slate-50'
+                    }`}
+                  >
+                    {isSelected && <CheckCircle2 size={14} className="text-white" />}
+                    {type}
+                  </button>
+                );
+              })}
             </div>
           </section>
 
@@ -3264,7 +3269,14 @@ export default function App() {
                       }`}>
                         {record.type === 'auto' ? '实时' : '补录'}
                       </span>
-                      {historyBusinessType === 'suzhou_runyi' ? (
+                      {record.customerType && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                          record.customerType === '首次进店' ? 'bg-amber-50 text-amber-600 border border-amber-200/30' : 'bg-blue-50 text-blue-600 border border-blue-200/30'
+                        }`}>
+                          {record.customerType}
+                        </span>
+                      )}
+                      {record.dealStatus && (
                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex items-center gap-0.5 ${
                           record.dealStatus === '是'
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/40'
@@ -3272,14 +3284,6 @@ export default function App() {
                         }`}>
                           {record.dealStatus === '是' ? '已成交' : '未成交'}
                         </span>
-                      ) : (
-                        record.customerType && (
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
-                            record.customerType === '首次进店' ? 'bg-amber-50 text-amber-600 border border-amber-200/30' : 'bg-blue-50 text-blue-600 border border-blue-200/30'
-                          }`}>
-                            {record.customerType}
-                          </span>
-                        )
                       )}
                     </div>
                     
@@ -3432,6 +3436,34 @@ export default function App() {
                 </div>
                 <Activity size={24} className="text-purple-200" />
               </div>
+            </div>
+          </section>
+
+          {/* 客户类型模块 */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-purple-600 font-semibold">
+              <UserCheck size={18} />
+              <span>客户类型</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(['首次进店', '二次进店'] as const).map((type) => {
+                const isSelected = lastReceptionSummary.customerType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setLastReceptionSummary({ ...lastReceptionSummary, customerType: type })}
+                    className={`py-3.5 px-4 rounded-2xl text-xs font-black border-2 transition-all flex items-center justify-center gap-2 ${
+                      isSelected
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-100'
+                        : 'bg-white text-slate-500 border-slate-200 active:bg-slate-50'
+                    }`}
+                  >
+                    {isSelected && <CheckCircle2 size={14} className="text-white" />}
+                    {type}
+                  </button>
+                );
+              })}
             </div>
           </section>
 
@@ -3664,6 +3696,7 @@ export default function App() {
                           type: 'auto',
                           businessType: receptionBrand === 'suzhou_runyi' ? 'suzhou_runyi' : 'car',
                           carSelections: lastReceptionSummary.carSelections,
+                          customerType: lastReceptionSummary.customerType,
                           dealStatus: lastReceptionSummary.dealStatus,
                           customerName: receptionBrand === 'suzhou_runyi' && lastReceptionSummary.customerName?.trim() ? lastReceptionSummary.customerName.trim() : undefined,
                           processName: receptionBrand === 'suzhou_runyi' ? '润益延保销售流程' : undefined,
@@ -3949,7 +3982,7 @@ export default function App() {
         {/* Customer Summary Card */}
         <div className="p-4">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4">
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-purple-200">
                 {selectedCustomer.name[0]}
               </div>
@@ -3964,23 +3997,6 @@ export default function App() {
                   </span>
                 </div>
               </div>
-            </div>
-            
-            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-              <div className="flex items-center gap-2 text-purple-600 font-bold text-sm mb-1">
-                <FileText size={16} />
-                核心摘要
-              </div>
-              {selectedCustomer.summary ? (
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  {selectedCustomer.summary.core}
-                </p>
-              ) : (
-                <div className="flex items-center gap-2 py-1">
-                  <Clock size={14} className="text-amber-500 animate-spin" />
-                  <span className="text-amber-600 text-xs font-medium">核心摘要生成中...</span>
-                </div>
-              )}
             </div>
           </div>
 
